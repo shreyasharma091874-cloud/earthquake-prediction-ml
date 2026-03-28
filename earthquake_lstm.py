@@ -125,6 +125,7 @@ for epoch in range(epochs):
     optimizer.step()
 
     print(f"Epoch {epoch+1}, Loss: {loss.item()}")
+    
 
 # -------------------------------
 # 10. TESTING
@@ -135,3 +136,17 @@ with torch.no_grad():
     test_loss = criterion(predictions, y_test)
 
 print("Test Loss:", test_loss.item())
+
+import matplotlib.pyplot as plt
+
+# Convert back to original scale
+y_test_np = y_scaler.inverse_transform(y_test.numpy())
+pred_np = y_scaler.inverse_transform(predictions.numpy())
+
+plt.figure()
+plt.plot(y_test_np[:, 0], label="Actual Magnitude")
+plt.plot(pred_np[:, 0], label="Predicted Magnitude")
+plt.legend()
+plt.title("Prediction vs Actual")
+plt.savefig("result.png")   # saves image
+plt.show()
