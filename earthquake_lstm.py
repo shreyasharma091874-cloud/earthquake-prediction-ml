@@ -38,8 +38,10 @@ data = data.dropna()
 X = data[['Timestamp', 'Latitude', 'Longitude']].values
 y = data[['Magnitude', 'Depth']].values
 
+print("Original data size:", len(X))
+
 # -------------------------------
-# 4. NORMALIZATION (IMPORTANT)
+# 4. NORMALIZATION
 # -------------------------------
 x_scaler = StandardScaler()
 y_scaler = StandardScaler()
@@ -48,18 +50,30 @@ X = x_scaler.fit_transform(X)
 y = y_scaler.fit_transform(y)
 
 # -------------------------------
-# 5. CREATE SEQUENCES (FIXED)
+# 5. CREATE SEQUENCES (AUTO FIX)
 # -------------------------------
-def create_sequences(X, y, seq_length=2):   # ✅ FIXED HERE
+def create_sequences(X, y, seq_length=2):
+
+    # auto adjust if dataset small
+    if len(X) <= seq_length:
+        seq_length = 1
+
     Xs, ys = [], []
+
     for i in range(len(X) - seq_length):
         Xs.append(X[i:i+seq_length])
         ys.append(y[i+seq_length])
+
     return np.array(Xs), np.array(ys)
 
 X, y = create_sequences(X, y, seq_length=2)
 
-print("Data size after sequence:", len(X))  # ✅ DEBUG
+print("After sequence:", len(X))
+
+# SAFETY CHECK
+if len(X) == 0:
+    print("❌ Dataset too small! Please add more data.")
+    exit()
 
 # -------------------------------
 # 6. TRAIN TEST SPLIT
@@ -83,7 +97,7 @@ class LSTMModel(nn.Module):
 
     def forward(self, x):
         out, _ = self.lstm(x)
-        out = out[:, -1, :]   # last time step
+        out = out[:, -1, :]   # last timestep
         out = self.fc(out)
         return out
 
@@ -92,7 +106,7 @@ model = LSTMModel()
 # -------------------------------
 # 8. LOSS + OPTIMIZER
 # -------------------------------
-criterion = nn.HuberLoss()   # better than MSE
+criterion = nn.HuberLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 # -------------------------------
