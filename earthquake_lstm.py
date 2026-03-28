@@ -10,13 +10,16 @@ import time
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-# Load dataset
+# -------------------------------
+# 1. LOAD DATA
+# -------------------------------
 data = pd.read_csv("database.csv")
 
-# Select columns
 data = data[['Date', 'Time', 'Latitude', 'Longitude', 'Depth', 'Magnitude']]
 
-# Convert Date + Time → Timestamp
+# -------------------------------
+# 2. CONVERT TO TIMESTAMP
+# -------------------------------
 timestamps = []
 
 for d, t in zip(data['Date'], data['Time']):
@@ -29,28 +32,38 @@ for d, t in zip(data['Date'], data['Time']):
 data['Timestamp'] = timestamps
 data = data.dropna()
 
-# Features & Labels
+# -------------------------------
+# 3. FEATURES & LABELS
+# -------------------------------
 X = data[['Timestamp', 'Latitude', 'Longitude']].values
 y = data[['Magnitude', 'Depth']].values
 
-# Normalize
+# -------------------------------
+# 4. NORMALIZATION (IMPORTANT)
+# -------------------------------
 x_scaler = StandardScaler()
 y_scaler = StandardScaler()
 
 X = x_scaler.fit_transform(X)
 y = y_scaler.fit_transform(y)
 
-# Create sequences for LSTM
-def create_sequences(X, y, seq_length=5):
+# -------------------------------
+# 5. CREATE SEQUENCES (FIXED)
+# -------------------------------
+def create_sequences(X, y, seq_length=2):   # ✅ FIXED HERE
     Xs, ys = [], []
     for i in range(len(X) - seq_length):
         Xs.append(X[i:i+seq_length])
         ys.append(y[i+seq_length])
     return np.array(Xs), np.array(ys)
 
-X, y = create_sequences(X, y)
+X, y = create_sequences(X, y, seq_length=2)
 
-# Train-Test Split
+print("Data size after sequence:", len(X))  # ✅ DEBUG
+
+# -------------------------------
+# 6. TRAIN TEST SPLIT
+# -------------------------------
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # Convert to tensors
@@ -59,26 +72,32 @@ X_test = torch.FloatTensor(X_test)
 y_train = torch.FloatTensor(y_train)
 y_test = torch.FloatTensor(y_test)
 
-# LSTM Model
+# -------------------------------
+# 7. LSTM MODEL
+# -------------------------------
 class LSTMModel(nn.Module):
     def __init__(self):
-        super(LSTMModel, self).__init__()
+        super().__init__()
         self.lstm = nn.LSTM(input_size=3, hidden_size=32, batch_first=True)
         self.fc = nn.Linear(32, 2)
 
     def forward(self, x):
-        lstm_out, _ = self.lstm(x)
-        last_output = lstm_out[:, -1, :]
-        out = self.fc(last_output)
+        out, _ = self.lstm(x)
+        out = out[:, -1, :]   # last time step
+        out = self.fc(out)
         return out
 
 model = LSTMModel()
 
-# Loss & Optimizer
-criterion = nn.HuberLoss()
+# -------------------------------
+# 8. LOSS + OPTIMIZER
+# -------------------------------
+criterion = nn.HuberLoss()   # better than MSE
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-# Training
+# -------------------------------
+# 9. TRAINING
+# -------------------------------
 epochs = 15
 
 for epoch in range(epochs):
@@ -93,7 +112,9 @@ for epoch in range(epochs):
 
     print(f"Epoch {epoch+1}, Loss: {loss.item()}")
 
-# Testing
+# -------------------------------
+# 10. TESTING
+# -------------------------------
 model.eval()
 with torch.no_grad():
     predictions = model(X_test)
