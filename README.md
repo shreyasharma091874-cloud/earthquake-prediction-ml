@@ -13,6 +13,14 @@ This project predicts earthquake magnitude and depth using machine learning.
 - Latitude
 - Longitude
 
+
+
+❕#result
+
+
+<img width="951" height="466" alt="image" src="https://github.com/user-attachments/assets/00de0a65-dee4-4028-a70f-c05e715aebd7" />
+
+
 ##  How to Run
 
 ```bash
@@ -23,10 +31,4 @@ python earthquake.py
 
 
 
-
-
-❕#result
-
-
-<img width="951" height="466" alt="image" src="https://github.com/user-attachments/assets/00de0a65-dee4-4028-a70f-c05e715aebd7" />
 
